@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"errors"
 	"github.com/zeebo/bencode"
 )
 
@@ -18,8 +18,10 @@ type TorrentFile struct {
 }
 
 type InfoData struct {
-	Length int  `bencode:"length"`
-	Files  File `bencode:"files"`
+	Left            int
+	Downloaded      int
+	TotalDataLength int
+	Files           File `bencode:"files"`
 }
 
 type File []struct {
@@ -29,13 +31,25 @@ type File []struct {
 
 func main() {
 	file, _ := ReadFile()
-
-	var torrentFile TorrentFile
-	err := bencode.DecodeBytes(file, &torrentFile)
-	if err != nil {
-		return
-	}
-	fmt.Println()
-
+	torrentFile, _ := DecodeTorrent(file)
+	torrentFile.Info.TotalLength()
 	GetInfoFromTracker(torrentFile)
+}
+
+func DecodeTorrent(b []byte) (*TorrentFile, error) {
+	var torrentFile TorrentFile
+	err := bencode.DecodeBytes(b, &torrentFile)
+	if err != nil {
+		return &torrentFile, errors.New("can't decode a data")
+	}
+
+	return &torrentFile, err
+}
+
+func (info *InfoData) TotalLength() {
+	total := 0
+	for _, file := range info.Files {
+		total += file.Length
+	}
+	info.Left = total - info.Downloaded
 }

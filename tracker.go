@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -17,7 +18,7 @@ const (
 	Http        = "http"
 )
 
-func GetInfoFromTracker(torrent TorrentFile) {
+func GetInfoFromTracker(torrent *TorrentFile) {
 
 	peerId, _ := CreatePeerId()
 	tHash, _ := calculateTorrentFileHash(torrent)
@@ -30,7 +31,7 @@ func GetInfoFromTracker(torrent TorrentFile) {
 		"peer_id":    []string{peerId},
 		"uploaded":   []string{"0"},
 		"downloaded": []string{"0"},
-		"left":       []string{"0"},
+		"left":       []string{strconv.Itoa(torrent.Info.TotalDataLength)},
 		"port":       []string{"6889"},
 		"compact":    []string{"1"},
 	}
@@ -59,7 +60,7 @@ func GetInfoFromTracker(torrent TorrentFile) {
 	fmt.Println(string(body))
 }
 
-func GetProtocol(p string, t TorrentFile) []string {
+func GetProtocol(p string, t *TorrentFile) []string {
 	var httpAnnounces []string
 	for _, announceGroup := range t.AnnounceList {
 		for _, announce := range announceGroup {
@@ -86,8 +87,8 @@ func CreatePeerId() (string, error) {
 	return peerID, nil
 }
 
-func calculateTorrentFileHash(torrent TorrentFile) (string, error) {
-	infoData, err := bencode.EncodeBytes(torrent.Info)
+func calculateTorrentFileHash(torrent *TorrentFile) (string, error) {
+	infoData, err := bencode.EncodeBytes(torrent.Info.Files)
 	if err != nil {
 		return "", err
 	}
