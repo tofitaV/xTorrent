@@ -2,10 +2,8 @@ package main
 
 import (
 	"crypto/rand"
-	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
-	"github.com/zeebo/bencode"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -21,17 +19,14 @@ const (
 func GetInfoFromTracker(torrent *TorrentFile) {
 
 	peerId, _ := CreatePeerId()
-	tHash, _ := calculateTorrentFileHash(torrent)
 
-	mainUrl := GetProtocol(Http, torrent)[0]
-
-	baseURL := mainUrl
+	baseURL := torrent.Announce
 	queryParams := url.Values{
-		"info_hash":  []string{tHash},
+		"info_hash":  []string{string(torrent.InfoHash[:])},
 		"peer_id":    []string{peerId},
 		"uploaded":   []string{"0"},
-		"downloaded": []string{"0"},
-		"left":       []string{strconv.Itoa(torrent.FileData.TotalDataLength)},
+		"downloaded": []string{strconv.Itoa(torrent.FileData.Downloaded)},
+		"left":       []string{strconv.Itoa(torrent.FileData.Left)},
 		"port":       []string{"6969"},
 		"compact":    []string{"1"},
 	}
@@ -85,13 +80,4 @@ func CreatePeerId() (string, error) {
 	peerID := prefix + hex.EncodeToString(randomPart)
 
 	return peerID, nil
-}
-
-func calculateTorrentFileHash(torrent *TorrentFile) (string, error) {
-	b, _ := bencode.EncodeBytes(torrent.Info)
-	hash := sha1.Sum(b)
-
-	infoHash := fmt.Sprintf("%x", hash)
-
-	return infoHash, nil
 }
