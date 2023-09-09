@@ -6,7 +6,7 @@ import (
 )
 
 func ReadFile() ([]byte, error) {
-	file, err := os.ReadFile("fallout4.torrent")
+	file, err := os.ReadFile("Starfield.torrent")
 	if err != nil {
 		return nil, errors.New("can't read a file")
 	}

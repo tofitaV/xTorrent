@@ -31,8 +31,8 @@ func GetInfoFromTracker(torrent *TorrentFile) {
 		"peer_id":    []string{peerId},
 		"uploaded":   []string{"0"},
 		"downloaded": []string{"0"},
-		"left":       []string{strconv.Itoa(torrent.Info.TotalDataLength)},
-		"port":       []string{"6889"},
+		"left":       []string{strconv.Itoa(torrent.FileData.TotalDataLength)},
+		"port":       []string{"6969"},
 		"compact":    []string{"1"},
 	}
 
@@ -42,7 +42,7 @@ func GetInfoFromTracker(torrent *TorrentFile) {
 	req, err := http.NewRequest(
 		"GET", fullURL, nil,
 	)
-
+	fmt.Println(req.URL)
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err)
@@ -88,12 +88,8 @@ func CreatePeerId() (string, error) {
 }
 
 func calculateTorrentFileHash(torrent *TorrentFile) (string, error) {
-	infoData, err := bencode.EncodeBytes(torrent.Info.Files)
-	if err != nil {
-		return "", err
-	}
-
-	hash := sha1.Sum(infoData)
+	b, _ := bencode.EncodeBytes(torrent.Info)
+	hash := sha1.Sum(b)
 
 	infoHash := fmt.Sprintf("%x", hash)
 

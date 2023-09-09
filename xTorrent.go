@@ -6,22 +6,28 @@ import (
 )
 
 type TorrentFile struct {
-	Name              string         `bencode:"name"`
-	PieceLength       int            `bencode:"piece length"`
-	Pieces            string         `bencode:"pieces"`
+	Publisher         string
+	PublisherUrl      string
 	Announce          string         `bencode:"announce"`
 	AnnounceList      [][]string     `bencode:"announce-list"`
 	AzureusProperties map[string]int `bencode:"azureus_properties"`
 	Comment           string         `bencode:"comment"`
 	CreatedBy         string         `bencode:"created by"`
-	Info              InfoData       `bencode:"info"`
+	Info              Info           `bencode:"info"`
+	FileData          FileData
 }
 
-type InfoData struct {
+type FileData struct {
 	Left            int
 	Downloaded      int
 	TotalDataLength int
-	Files           File `bencode:"files"`
+}
+
+type Info struct {
+	Name        string
+	PieceLength int
+	Pieces      string
+	Files       File `bencode:"files"`
 }
 
 type File []struct {
@@ -32,7 +38,7 @@ type File []struct {
 func main() {
 	file, _ := ReadFile()
 	torrentFile, _ := DecodeTorrent(file)
-	torrentFile.Info.TotalLength()
+	torrentFile.TotalLength()
 	GetInfoFromTracker(torrentFile)
 }
 
@@ -43,13 +49,23 @@ func DecodeTorrent(b []byte) (*TorrentFile, error) {
 		return &torrentFile, errors.New("can't decode a data")
 	}
 
+	var result interface{}
+	_ = bencode.DecodeBytes(b, &result)
+	topMap, _ := result.(map[string]interface{})
+
+	torrentFile.Info.Name = topMap["info"].(map[string]interface{})["name"].(string)
+	torrentFile.Info.PieceLength = int(topMap["info"].(map[string]interface{})["piece length"].(int64))
+	torrentFile.Info.Pieces = topMap["info"].(map[string]interface{})["pieces"].(string)
+	torrentFile.Publisher = topMap["publisher"].(string)
+	torrentFile.PublisherUrl = topMap["publisher-url"].(string)
+
 	return &torrentFile, err
 }
 
-func (info *InfoData) TotalLength() {
+func (t *TorrentFile) TotalLength() {
 	total := 0
-	for _, file := range info.Files {
+	for _, file := range t.Info.Files {
 		total += file.Length
 	}
-	info.Left = total - info.Downloaded
+	t.FileData.Left = total - t.FileData.Downloaded
 }
