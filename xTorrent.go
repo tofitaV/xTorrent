@@ -44,14 +44,15 @@ func main() {
 
 func DecodeTorrent(b []byte) (*TorrentFile, error) {
 	var torrentFile TorrentFile
+
 	err := bencode.DecodeBytes(b, &torrentFile)
 	if err != nil {
 		return &torrentFile, errors.New("can't decode a data")
 	}
 
-	var result interface{}
+	var result map[string]interface{}
 	_ = bencode.DecodeBytes(b, &result)
-	topMap, _ := result.(map[string]interface{})
+	topMap := result
 
 	torrentFile.Info.Name = topMap["info"].(map[string]interface{})["name"].(string)
 	torrentFile.Info.PieceLength = int(topMap["info"].(map[string]interface{})["piece length"].(int64))
