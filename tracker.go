@@ -9,6 +9,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
+)
+
+const (
+	Udp  string = "udp"
+	Http        = "http"
 )
 
 func GetInfoFromTracker(torrent TorrentFile) {
@@ -16,7 +22,9 @@ func GetInfoFromTracker(torrent TorrentFile) {
 	peerId, _ := CreatePeerId()
 	tHash, _ := calculateTorrentFileHash(torrent)
 
-	baseURL := torrent.Announce
+	mainUrl := GetProtocol(Http, torrent)[0]
+
+	baseURL := mainUrl
 	queryParams := url.Values{
 		"info_hash":  []string{tHash},
 		"peer_id":    []string{peerId},
@@ -49,6 +57,18 @@ func GetInfoFromTracker(torrent TorrentFile) {
 	}
 
 	fmt.Println(string(body))
+}
+
+func GetProtocol(p string, t TorrentFile) []string {
+	var httpAnnounces []string
+	for _, announceGroup := range t.AnnounceList {
+		for _, announce := range announceGroup {
+			if strings.Contains(announce, p) {
+				httpAnnounces = append(httpAnnounces, announce)
+			}
+		}
+	}
+	return httpAnnounces
 }
 
 func CreatePeerId() (string, error) {

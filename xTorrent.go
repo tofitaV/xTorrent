@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/cristalhq/bencode"
+	"github.com/zeebo/bencode"
 )
 
 type TorrentFile struct {
@@ -28,13 +28,14 @@ type File []struct {
 }
 
 func main() {
-	var torrentFile TorrentFile
-
 	file, _ := ReadFile()
-	err := bencode.Unmarshal(file, &torrentFile)
+
+	var torrentFile TorrentFile
+	err := bencode.DecodeBytes(file, &torrentFile)
 	if err != nil {
 		return
 	}
-	fmt.Println(string(file[:]))
-	//GetInfoFromTracker(torrentFile)
+	fmt.Println()
+
+	GetInfoFromTracker(torrentFile)
 }
