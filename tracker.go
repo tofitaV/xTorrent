@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
+	"github.com/jackpal/bencode-go"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -16,8 +16,12 @@ const (
 	Http        = "http"
 )
 
-func GetInfoFromTracker(torrent *TorrentFile) {
+type TrackerResponse struct {
+	Interval int    `bencode:"interval"`
+	Peers    string `bencode:"peers"`
+}
 
+func GetPeers(torrent *TorrentFile) ([]Peer, error) {
 	peerId, _ := CreatePeerId()
 
 	baseURL := torrent.Announce
@@ -41,18 +45,19 @@ func GetInfoFromTracker(torrent *TorrentFile) {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil, err
 	}
 
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	trackerResponse := TrackerResponse{}
+	err = bencode.Unmarshal(resp.Body, &trackerResponse)
 	if err != nil {
-		fmt.Println("Error while reading", err)
-		return
+		return nil, err
 	}
 
-	fmt.Println(string(body))
+	peers, err := ParsePeers([]byte(trackerResponse.Peers))
+	return peers, err
 }
 
 func GetProtocol(p string, t *TorrentFile) []string {

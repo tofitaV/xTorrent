@@ -5,8 +5,8 @@ import (
 	"os"
 )
 
-func ReadFile() ([]byte, error) {
-	file, err := os.ReadFile("Starfield.torrent")
+func ReadFile(filePath string) ([]byte, error) {
+	file, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, errors.New("can't read a file")
 	}

@@ -47,7 +47,18 @@ func DecodeTorrent(b []byte) (*TorrentFile, error) {
 		return &torrentFile, errors.New("can't decode a data")
 	}
 
+	torrentFile.TotalLength()
+	torrentFile.GetHashes()
 	return &torrentFile, err
+}
+
+func DownloadFiles(filePath []byte) {
+	torrentFile, err := DecodeTorrent(filePath)
+	if err != nil {
+		errors.New("can't get hash")
+	}
+	peers, _ := GetPeers(torrentFile)
+	fmt.Println(peers)
 }
 
 func (t *TorrentFile) TotalLength() {
