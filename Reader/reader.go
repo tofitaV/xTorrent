@@ -1,4 +1,4 @@
-package main
+package Reader
 
 import (
 	"errors"

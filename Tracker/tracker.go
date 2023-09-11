@@ -1,19 +1,16 @@
-package main
+package Tracker
 
 import (
+	"awesomeProject/Peers"
+	"awesomeProject/Torrent"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"github.com/jackpal/bencode-go"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
-)
-
-const (
-	Udp  string = "udp"
-	Http        = "http"
 )
 
 type TrackerResponse struct {
@@ -21,16 +18,17 @@ type TrackerResponse struct {
 	Peers    string `bencode:"peers"`
 }
 
-func GetPeers(torrent *TorrentFile) ([]Peer, error) {
+func GetPeers(t *Torrent.TorrentFile) ([]Peers.Peer, string, error) {
+
 	peerId, _ := CreatePeerId()
 
-	baseURL := torrent.Announce
+	baseURL := t.Announce
 	queryParams := url.Values{
-		"info_hash":  []string{string(torrent.InfoHash[:])},
+		"info_hash":  []string{string(t.InfoHash[:])},
 		"peer_id":    []string{peerId},
 		"uploaded":   []string{"0"},
-		"downloaded": []string{strconv.Itoa(torrent.FileData.Downloaded)},
-		"left":       []string{strconv.Itoa(torrent.FileData.Left)},
+		"downloaded": []string{"0"},
+		"left":       []string{strconv.Itoa(t.Info.Length)},
 		"port":       []string{"6969"},
 		"compact":    []string{"1"},
 	}
@@ -41,35 +39,27 @@ func GetPeers(torrent *TorrentFile) ([]Peer, error) {
 	req, err := http.NewRequest(
 		"GET", fullURL, nil,
 	)
-	fmt.Println(req.URL)
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(resp.Body)
 
 	trackerResponse := TrackerResponse{}
 	err = bencode.Unmarshal(resp.Body, &trackerResponse)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	peers, err := ParsePeers([]byte(trackerResponse.Peers))
-	return peers, err
-}
-
-func GetProtocol(p string, t *TorrentFile) []string {
-	var httpAnnounces []string
-	for _, announceGroup := range t.AnnounceList {
-		for _, announce := range announceGroup {
-			if strings.Contains(announce, p) {
-				httpAnnounces = append(httpAnnounces, announce)
-			}
-		}
-	}
-	return httpAnnounces
+	peers, err := Peers.ParsePeers([]byte(trackerResponse.Peers))
+	return peers, peerId, err
 }
 
 func CreatePeerId() (string, error) {

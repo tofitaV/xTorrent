@@ -1,4 +1,4 @@
-package main
+package Torrent
 
 import (
 	"bytes"
@@ -32,6 +32,7 @@ type Info struct {
 	Name        string `bencode:"name"`
 	PieceLength int    `bencode:"piece length"`
 	Pieces      string `bencode:"pieces"`
+	Length      int    `bencode:"length"`
 	Files       File   `bencode:"files"`
 }
 
@@ -52,13 +53,12 @@ func DecodeTorrent(b []byte) (*TorrentFile, error) {
 	return &torrentFile, err
 }
 
-func DownloadFiles(filePath []byte) {
+func DownloadFiles(filePath []byte) *TorrentFile {
 	torrentFile, err := DecodeTorrent(filePath)
 	if err != nil {
 		errors.New("can't get hash")
 	}
-	peers, _ := GetPeers(torrentFile)
-	fmt.Println(peers)
+	return torrentFile
 }
 
 func (t *TorrentFile) TotalLength() {
@@ -102,7 +102,7 @@ func (t *TorrentFile) GetHashes() {
 	}
 	pieceHashes, err := t.SplitPieceHashes()
 	if err != nil {
-		errors.New("can't splite hashes")
+		errors.New("can't split hashes")
 	}
 	t.InfoHash = infoHash
 	t.PieceHashes = pieceHashes
